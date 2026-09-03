@@ -1,0 +1,2 @@
+# Ignore raw source PDFs to keep repository lightweight
+*.pdf

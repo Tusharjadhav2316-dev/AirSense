@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-deep-atmosphere: #0B1220;
+    --color-clear-sky: #4FA8E0;
+    --color-hazy-amber: #E0A458;
+    --color-alert-rust: #D64545;
+    --color-mist-white: #F4F7FA;
+    --color-slate-ink: #64748B;
+  }
+
+  body {
+    background-color: #F4F7FA;
+    color: #0B1220;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Space Grotesk', system-ui, sans-serif;
+  }
+
+  .font-display {
+    font-family: 'Space Grotesk', system-ui, sans-serif;
+  }
+
+  .font-serif {
+    font-family: 'Fraunces', 'Georgia', serif;
+  }
+
+  .font-mono {
+    font-family: 'IBM Plex Mono', monospace;
+  }
+}
+
+@layer utilities {
+  /* Reusable Severity-Aware Ambient Background System */
+  .ambient-good {
+    background: linear-gradient(135deg, rgba(79, 168, 224, 0.08) 0%, rgba(244, 247, 250, 0.95) 60%, #FFFFFF 100%);
+    border-color: rgba(79, 168, 224, 0.25);
+  }
+
+  .ambient-moderate {
+    background: linear-gradient(135deg, rgba(224, 164, 88, 0.10) 0%, rgba(244, 247, 250, 0.95) 60%, #FFFFFF 100%);
+    border-color: rgba(224, 164, 88, 0.25);
+  }
+
+  .ambient-unhealthy {
+    background: linear-gradient(135deg, rgba(214, 69, 69, 0.10) 0%, rgba(244, 247, 250, 0.95) 60%, #FFFFFF 100%);
+    border-color: rgba(214, 69, 69, 0.25);
+  }
+
+  .ambient-hazardous {
+    background: linear-gradient(135deg, rgba(214, 69, 69, 0.15) 0%, rgba(244, 247, 250, 0.90) 60%, #FFFFFF 100%);
+    border-color: rgba(214, 69, 69, 0.35);
+  }
+}
+
