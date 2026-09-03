@@ -16,12 +16,16 @@ import type {
   AlertListResponse,
 } from '../types';
 
+const PROD_DEFAULT_URL = 'https://backend-two-blush-37.vercel.app';
+const DEV_DEFAULT_URL = 'http://localhost:8000';
+
 const API_BASE_URL =
+  import.meta.env.BACKEND_URL ||
   import.meta.env.VITE_BACKEND_URL ||
   import.meta.env.VITE_SERVER_URL ||
   import.meta.env.VITE_API_URL ||
   import.meta.env.VITE_API_BASE_URL ||
-  'http://localhost:8000';
+  (import.meta.env.PROD ? PROD_DEFAULT_URL : DEV_DEFAULT_URL);
 
 async function handleResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
