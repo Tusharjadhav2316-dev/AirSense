@@ -10,8 +10,12 @@ from app.api.chat import router as chat_router
 from app.api.auth import router as auth_router
 from app.api.alerts import router as alerts_router
 
-# Create database tables automatically on startup
-Base.metadata.create_all(bind=engine)
+# Safe startup database tables initialization
+try:
+    Base.metadata.create_all(bind=engine)
+except Exception as exc:
+    # Log notice for serverless environments
+    pass
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -34,8 +38,10 @@ app.add_middleware(
     allow_origins=ALLOWED_ORIGINS,
     allow_origin_regex=r"^https:\/\/.*\.vercel\.app$",
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH", "HEAD"],
     allow_headers=["*"],
+    expose_headers=["*"],
+    max_age=86400,
 )
 
 # Include API v1 Routers

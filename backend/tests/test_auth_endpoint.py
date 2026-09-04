@@ -153,3 +153,18 @@ def test_security_verify_google_id_token_checks(monkeypatch):
     # 2. Missing client ID
     with pytest.raises(ValueError, match="Server GOOGLE_CLIENT_ID is not configured"):
         verify_google_id_token("some-token", client_id="")
+
+def test_cors_options_preflight():
+    """Test CORS OPTIONS preflight request for /auth/oauth returns Access-Control-Allow-Origin."""
+    prod_origin = "https://frontend-bice-xi-29.vercel.app"
+    response = client.options(
+        "/auth/oauth",
+        headers={
+            "Origin": prod_origin,
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": "content-type,authorization"
+        }
+    )
+    assert response.status_code == 200
+    assert response.headers.get("access-control-allow-origin") == prod_origin
+    assert "POST" in response.headers.get("access-control-allow-methods", "")
