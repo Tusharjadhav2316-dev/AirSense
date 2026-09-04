@@ -13,8 +13,8 @@ class UserLoginRequest(BaseModel):
 
 class OAuthLoginRequest(BaseModel):
     provider: str = Field(..., description="OAuth provider e.g. 'google' or 'apple'")
-    email: str = Field(..., description="User email address")
-    id_token: Optional[str] = Field(None, description="OAuth ID token if available")
+    email: Optional[str] = Field(None, description="User email address (optional; server verifies identity from id_token for Google)")
+    id_token: Optional[str] = Field(None, description="OAuth ID token for cryptographic verification")
     health_profile: Optional[str] = Field("none", description="Health profile")
     home_location: Optional[str] = Field("Pune", description="Home location")
 

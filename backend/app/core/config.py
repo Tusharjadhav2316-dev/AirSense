@@ -14,6 +14,10 @@ class Settings(BaseSettings):
     JWT_SECRET: str = "airsense_dev_jwt_secret_key_32_characters_minimum"
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRE_MINUTES: int = 10080  # 7 days
+
+    # Google OAuth
+    GOOGLE_CLIENT_ID: Optional[str] = ""
+    GOOGLE_CLIENT_SECRET: Optional[str] = ""
     
     # OpenRouter / LLM Configuration
     OPENROUTER_API_KEY: Optional[str] = ""
