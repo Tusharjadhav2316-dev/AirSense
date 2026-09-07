@@ -1,11 +1,5 @@
-"""
-================================================================================
-AIRSENSE — RAG RETRIEVER SERVICE (Sprint 2 — Day 7)
-================================================================================
-Constructs targeted health queries from atmospheric measurements + health profiles
-and retrieves top grounded guideline chunks from ChromaDB.
-================================================================================
-"""
+import os
+from typing import List, Dict, Any
 
 try:
     import chromadb
