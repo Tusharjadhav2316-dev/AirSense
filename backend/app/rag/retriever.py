@@ -7,10 +7,14 @@ and retrieves top grounded guideline chunks from ChromaDB.
 ================================================================================
 """
 
-import os
-import chromadb
-from typing import List, Dict, Any
-from chromadb.utils import embedding_functions
+try:
+    import chromadb
+    from chromadb.utils import embedding_functions
+    HAS_CHROMADB = True
+except Exception:
+    chromadb = None
+    embedding_functions = None
+    HAS_CHROMADB = False
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 VECTOR_STORE_DIR = os.path.join(BASE_DIR, "rag_sources", "vector_store")
@@ -21,14 +25,19 @@ _collection = None
 
 def _get_collection():
     global _chroma_client, _collection
+    if not HAS_CHROMADB:
+        return None
     if _collection is None:
-        os.makedirs(VECTOR_STORE_DIR, exist_ok=True)
-        _chroma_client = chromadb.PersistentClient(path=VECTOR_STORE_DIR)
-        embedding_fn = embedding_functions.DefaultEmbeddingFunction()
-        _collection = _chroma_client.get_or_create_collection(
-            name=COLLECTION_NAME,
-            embedding_function=embedding_fn
-        )
+        try:
+            os.makedirs(VECTOR_STORE_DIR, exist_ok=True)
+            _chroma_client = chromadb.PersistentClient(path=VECTOR_STORE_DIR)
+            embedding_fn = embedding_functions.DefaultEmbeddingFunction()
+            _collection = _chroma_client.get_or_create_collection(
+                name=COLLECTION_NAME,
+                embedding_function=embedding_fn
+            )
+        except Exception:
+            return None
     return _collection
 
 def retrieve_guidance(
@@ -51,11 +60,12 @@ def retrieve_guidance(
 
     try:
         collection = _get_collection()
-        results = collection.query(
-            query_texts=[query_str],
-            n_results=top_k,
-            include=["documents", "metadatas", "distances"]
-        )
+        if collection is not None:
+            results = collection.query(
+                query_texts=[query_str],
+                n_results=top_k,
+                include=["documents", "metadatas", "distances"]
+            )
 
         retrieved_chunks = []
         if results and results.get("documents") and len(results["documents"]) > 0:

@@ -99,24 +99,27 @@ async def process_chat_message(payload: ChatRequest) -> ChatResponse:
 
     # 2. Vector search ChromaDB using the free-text user message
     collection = _get_collection()
-    search_query = f"{message} (Health profile: {health_profile}, AQI Category: {aqi_data['category']})"
-    
-    results = collection.query(
-        query_texts=[search_query],
-        n_results=3,
-        include=["documents", "metadatas", "distances"]
-    )
-
     retrieved_chunks = []
-    if results and results.get("documents") and len(results["documents"]) > 0:
-        docs = results["documents"][0]
-        metas = results["metadatas"][0]
-        for i in range(len(docs)):
-            retrieved_chunks.append({
-                "source_name": metas[i].get("source_name", "WHO/EPA Guideline"),
-                "section_title": metas[i].get("section_title", "Guideline"),
-                "content": docs[i]
-            })
+    if collection is not None:
+        try:
+            search_query = f"{message} (Health profile: {health_profile}, AQI Category: {aqi_data['category']})"
+            results = collection.query(
+                query_texts=[search_query],
+                n_results=3,
+                include=["documents", "metadatas", "distances"]
+            )
+
+            if results and results.get("documents") and len(results["documents"]) > 0:
+                docs = results["documents"][0]
+                metas = results["metadatas"][0]
+                for i in range(len(docs)):
+                    retrieved_chunks.append({
+                        "source_name": metas[i].get("source_name", "WHO/EPA Guideline"),
+                        "section_title": metas[i].get("section_title", "Guideline"),
+                        "content": docs[i]
+                    })
+        except Exception as e:
+            print(f"[WARN] Chat vector search query fallback: {e}")
 
     # 3. Check OpenRouter API key
     api_key = (settings.OPENROUTER_API_KEY or settings.LLM_API_KEY or "").strip()

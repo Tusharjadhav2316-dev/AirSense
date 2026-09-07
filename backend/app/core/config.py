@@ -3,6 +3,11 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import Optional
 
 def get_default_database_url() -> str:
+    db_env = os.environ.get("DATABASE_URL")
+    if db_env:
+        if (os.environ.get("VERCEL") or os.environ.get("AWS_LAMBDA_FUNCTION_NAME")) and "sqlite:///." in db_env:
+            return "sqlite:////tmp/airsense.db"
+        return db_env
     if os.environ.get("VERCEL") or os.environ.get("AWS_LAMBDA_FUNCTION_NAME"):
         return "sqlite:////tmp/airsense.db"
     return "sqlite:///./airsense.db"
