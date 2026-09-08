@@ -41,42 +41,118 @@ export interface OAuthResult {
 }
 
 /**
- * Trigger real Google OAuth Sign-in flow via popup
+ * Load Google Identity Services SDK dynamically
  */
-export async function authenticateWithGoogle(): Promise<OAuthResult> {
-  if (!auth) {
-    // If no Firebase API key in .env, prompt user or throw informative error
-    const dummyGoogleEmail = `user.${Date.now().toString().slice(-4)}@gmail.com`;
-    // If running in development without Firebase keys, provide seamless local OAuth demo
-    return {
-      email: dummyGoogleEmail,
-      displayName: 'Google User',
-      provider: 'google',
-    };
+function loadGoogleGsiScript(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if ((window as any).google?.accounts?.oauth2) {
+      resolve();
+      return;
+    }
+    const existing = document.getElementById('google-gsi-client');
+    if (existing) {
+      existing.addEventListener('load', () => resolve());
+      existing.addEventListener('error', () => reject(new Error('Failed to load Google SDK')));
+      return;
+    }
+    const script = document.createElement('script');
+    script.id = 'google-gsi-client';
+    script.src = 'https://accounts.google.com/gsi/client';
+    script.async = true;
+    script.defer = true;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error('Failed to load Google Identity Services SDK'));
+    document.head.appendChild(script);
+  });
+}
+
+/**
+ * Sign in directly via Google Cloud OAuth 2.0 (Google Identity Services)
+ */
+async function signInWithGoogleCloudClient(clientId: string): Promise<OAuthResult> {
+  await loadGoogleGsiScript();
+  const google = (window as any).google;
+  if (!google?.accounts?.oauth2) {
+    throw new Error('Google Sign-In SDK is unavailable.');
   }
 
-  try {
-    const cred: UserCredential = await signInWithPopup(auth, googleProvider);
-    const user = cred.user;
-    if (!user.email) {
-      throw new Error('No email found associated with this Google account.');
-    }
-    const idToken = await user.getIdToken();
-    return {
-      email: user.email,
-      displayName: user.displayName || undefined,
-      idToken,
-      provider: 'google',
-    };
-  } catch (error: any) {
-    if (error.code === 'auth/popup-closed-by-user') {
-      throw new Error('Google sign-in was cancelled.');
-    }
-    if (error.code === 'auth/popup-blocked') {
-      throw new Error('Popup was blocked by your browser. Please allow popups for localhost.');
-    }
-    throw new Error(error.message || 'Google sign-in could not be completed. Please try again.');
+  return new Promise((resolve, reject) => {
+    const tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: clientId,
+      scope: 'openid email profile',
+      callback: async (tokenResponse: any) => {
+        if (tokenResponse.error) {
+          reject(new Error(tokenResponse.error_description || tokenResponse.error || 'Google sign-in failed.'));
+          return;
+        }
+        try {
+          const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+            headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
+          });
+          if (!res.ok) {
+            throw new Error('Could not fetch Google profile details.');
+          }
+          const profile = await res.json();
+          resolve({
+            email: profile.email,
+            displayName: profile.name,
+            idToken: tokenResponse.access_token,
+            provider: 'google',
+          });
+        } catch (err: any) {
+          reject(err);
+        }
+      },
+      error_callback: (err: any) => {
+        reject(new Error(err.message || 'Google sign-in popup was closed or blocked.'));
+      },
+    });
+
+    tokenClient.requestAccessToken({ prompt: 'select_account' });
+  });
+}
+
+/**
+ * Trigger real Google OAuth Sign-in flow via Google Cloud OAuth or Firebase
+ */
+export async function authenticateWithGoogle(): Promise<OAuthResult> {
+  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || import.meta.env.VITE_GOOGLE_OAUTH_CLIENT_ID;
+  if (googleClientId && typeof googleClientId === 'string' && googleClientId.trim()) {
+    return await signInWithGoogleCloudClient(googleClientId.trim());
   }
+
+  if (auth) {
+    try {
+      const cred: UserCredential = await signInWithPopup(auth, googleProvider);
+      const user = cred.user;
+      if (!user.email) {
+        throw new Error('No email found associated with this Google account.');
+      }
+      const idToken = await user.getIdToken();
+      return {
+        email: user.email,
+        displayName: user.displayName || undefined,
+        idToken,
+        provider: 'google',
+      };
+    } catch (error: any) {
+      if (error.code === 'auth/popup-closed-by-user') {
+        throw new Error('Google sign-in was cancelled.');
+      }
+      if (error.code === 'auth/popup-blocked') {
+        throw new Error('Popup was blocked by your browser. Please allow popups.');
+      }
+      throw new Error(error.message || 'Google sign-in could not be completed. Please try again.');
+    }
+  }
+
+  // If running in development without Google keys, provide seamless local OAuth demo
+  const dummyGoogleEmail = `user.${Date.now().toString().slice(-4)}@gmail.com`;
+  return {
+    email: dummyGoogleEmail,
+    displayName: 'Google User',
+    provider: 'google',
+  };
 }
 
 /**
