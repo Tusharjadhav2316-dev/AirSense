@@ -51,7 +51,7 @@ def verify_google_id_token(token: str, client_id: Optional[str] = None) -> dict:
     if not token or not isinstance(token, str) or not token.strip():
         raise ValueError("Google ID token is required and cannot be empty.")
 
-    target_client_id = client_id or settings.GOOGLE_CLIENT_ID
+    target_client_id = client_id if client_id is not None else settings.GOOGLE_CLIENT_ID
     if not target_client_id or not target_client_id.strip():
         raise ValueError("Server GOOGLE_CLIENT_ID is not configured.")
 

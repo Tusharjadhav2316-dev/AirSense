@@ -31,7 +31,7 @@ def _get_collection():
                 name=COLLECTION_NAME,
                 embedding_function=embedding_fn
             )
-        except Exception:
+        except BaseException:
             return None
     return _collection
 
