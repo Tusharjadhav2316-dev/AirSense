@@ -1,12 +1,27 @@
+import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker, Session
 from app.core.config import settings
 
+def get_active_db_url() -> str:
+    url = settings.DATABASE_URL
+    if (
+        os.environ.get("VERCEL")
+        or os.environ.get("AWS_LAMBDA_FUNCTION_NAME")
+        or os.environ.get("LAMBDA_TASK_ROOT")
+        or os.environ.get("VERCEL_ENV")
+    ):
+        if url.startswith("sqlite"):
+            return "sqlite:////tmp/airsense.db"
+    return url
+
+ACTIVE_DATABASE_URL = get_active_db_url()
+
 # For SQLite, check_same_thread=False allows multi-threaded async FastAPI requests
-connect_args = {"check_same_thread": False} if settings.DATABASE_URL.startswith("sqlite") else {}
+connect_args = {"check_same_thread": False} if ACTIVE_DATABASE_URL.startswith("sqlite") else {}
 
 engine = create_engine(
-    settings.DATABASE_URL,
+    ACTIVE_DATABASE_URL,
     connect_args=connect_args,
     pool_pre_ping=True
 )
