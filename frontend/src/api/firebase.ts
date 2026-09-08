@@ -146,13 +146,10 @@ export async function authenticateWithGoogle(): Promise<OAuthResult> {
     }
   }
 
-  // If running in development without Google keys, provide seamless local OAuth demo
-  const dummyGoogleEmail = `user.${Date.now().toString().slice(-4)}@gmail.com`;
-  return {
-    email: dummyGoogleEmail,
-    displayName: 'Google User',
-    provider: 'google',
-  };
+  // If no Google Client ID or Firebase keys are active in the build:
+  throw new Error(
+    'Google Sign-In is not configured in this build. Please add VITE_GOOGLE_CLIENT_ID in your Vercel frontend Settings -> Environment Variables, and click Redeploy.'
+  );
 }
 
 /**
