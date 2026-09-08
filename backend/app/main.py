@@ -46,15 +46,12 @@ app.add_middleware(
 
 @app.middleware("http")
 async def fix_vercel_path_middleware(request, call_next):
-    # Vercel rewrites may set path to /api/index.py; restore from headers if present
-    matched_path = request.headers.get("x-matched-path") or request.headers.get("x-vercel-matched-path")
-    if matched_path and request.scope.get("path", "").startswith("/api/index"):
-        request.scope["path"] = matched_path
-    elif request.scope.get("path", "").startswith("/api/index.py"):
-        sub = request.scope["path"][len("/api/index.py"):]
+    raw_path = request.scope.get("path", "")
+    if raw_path.startswith("/api/index.py"):
+        sub = raw_path[len("/api/index.py"):]
         request.scope["path"] = sub if sub.startswith("/") else ("/" + sub if sub else "/")
-    elif request.scope.get("path", "").startswith("/api/index"):
-        sub = request.scope["path"][len("/api/index"):]
+    elif raw_path.startswith("/api/index"):
+        sub = raw_path[len("/api/index"):]
         request.scope["path"] = sub if sub.startswith("/") else ("/" + sub if sub else "/")
 
     return await call_next(request)
