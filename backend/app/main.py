@@ -44,6 +44,21 @@ app.add_middleware(
     max_age=86400,
 )
 
+@app.middleware("http")
+async def fix_vercel_path_middleware(request, call_next):
+    # Vercel rewrites may set path to /api/index.py; restore from headers if present
+    matched_path = request.headers.get("x-matched-path") or request.headers.get("x-vercel-matched-path")
+    if matched_path and request.scope.get("path", "").startswith("/api/index"):
+        request.scope["path"] = matched_path
+    elif request.scope.get("path", "").startswith("/api/index.py"):
+        sub = request.scope["path"][len("/api/index.py"):]
+        request.scope["path"] = sub if sub.startswith("/") else ("/" + sub if sub else "/")
+    elif request.scope.get("path", "").startswith("/api/index"):
+        sub = request.scope["path"][len("/api/index"):]
+        request.scope["path"] = sub if sub.startswith("/") else ("/" + sub if sub else "/")
+
+    return await call_next(request)
+
 # Include API v1 Routers
 app.include_router(health_router, prefix=settings.API_V1_STR)
 app.include_router(aqi_router, prefix=settings.API_V1_STR)
